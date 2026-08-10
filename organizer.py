@@ -1,6 +1,7 @@
 #"Go find the os module and load all its tools so I can use them in this script." From now on, whenever you want one of those tools, you'll write os. followed by the tool's name. The os. prefix is how Python knows "this comes from the os module."
 import os
 import shutil
+import sys
 
 # refactoring list and using a dictionary instead. which stores everything as a key value pair. the extention is the key and the category 
 # becomes the value. this will make adding new extensions and categories easier if need be by only adding one line
@@ -13,6 +14,7 @@ extension_categories = {
     ".gif": "Images",
     ".heic": "Images",
     ".avif": "Images",
+    ".cr2": "Images",
     ".pdf": "Documents",
     ".docx": "Documents",
     ".txt": "Documents",
@@ -22,6 +24,7 @@ extension_categories = {
     ".mp3": "Audio",
     ".wav": "Audio",
     ".m4a": "Audio",
+    ".alp": "Audio",
     ".mp4": "Video",
     ".mov": "Video",
     ".webm": "Video",
@@ -66,11 +69,26 @@ def organize_folder(folder_path):
         # os.makedirs() — you give it a folder path, and it actually creates that folder on disk.
         if not os.path.exists(destination_folder):
             os.makedirs(destination_folder)
-        
-        
+
+        # Joins the destination folder and file together and creates a file path, stores in destination_path variable 
+        destination_path = os.path.join(destination_folder, file)
+     
+        counter = 1
+        while os.path.exists(destination_path):
+            new_name = f"{name}_{counter}{extension}"
+            destination_path = os.path.join(destination_folder, new_name)
+            counter += 1
+
         # shutil.move(). You give it two arguments — the source path and the destination — and it physically moves the file:
-        shutil.move(source_path, destination_folder)
+        shutil.move(source_path, destination_path)
 
         print(destination_folder)
+if len(sys.argv) < 2:
+    print("Drag a folder onto this program to organize it.")
+    sys.exit(1)
+target_folder = sys.argv[1]
 
-organize_folder(r"C:\Users\morit\Downloads")
+if not os.path.isdir(target_folder):
+    print(f"{target_folder} Is not a valid folder path, please try again")
+    sys.exit(1)
+organize_folder(target_folder)
