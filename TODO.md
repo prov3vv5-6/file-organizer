@@ -39,7 +39,40 @@ No undo exists, so I need to see what *would* happen before touching anything.
   looping `.items()`. Sorting that map by value instead of key is Top K Frequent.
 
 ## 5. Error handling ← in progress
-- [ ] Don't let one bad file (locked, permission denied) crash the whole run
+- [x] Don't let one bad file (locked, permission denied) crash the whole run —
+      `try`/`except OSError as error` around **only** the `shutil.move` call, then
+      `continue`. `OSError` is the parent of `PermissionError`/`FileNotFoundError`, so
+      one `except` covers the whole filesystem family. Keep the `try` narrow: wrapping
+      the whole loop body would swallow my own bugs and report them as "bad file".
+- [x] Bind the exception with `as error` and print `{error}`. Printing `{OSError}`
+      instead gives `<class 'OSError'>` — same text for every failure, and no crash to
+      tell me it's wrong, because `OSError` is a valid name in that scope.
+- [x] Counters have to come *after* the move, not before. `total`, `category_counts`,
+      and `renamed_files` all sat above the `try`, so a file that failed was still
+      counted as moved. Sitting them below the `try` block (but outside `if not
+      dry_run`) fixes both paths: a real failure hits `continue` and skips them, and a
+      dry run falls straight through and still counts.
+- [ ] Guard `os.makedirs` too — if it fails, every file in that category fails
+
+## 5c. Failed moves leave a partial copy — the "skipped" message lies
+Found while testing step 5 with a genuinely locked file. `shutil.move` is not one
+operation: it tries `os.rename` first, and on failure falls back to *copy, then delete
+the original*. With a locked file the copy **succeeds** and the delete fails, so the
+exception arrives after the destination is already written. Result: the client has the
+same file in two places and the run prints "Skipped".
+- [ ] Decide the approach: pre-flight check (try opening the file exclusively before
+      moving, skip if it won't open), or detect the leftover afterward and report it
+      loudly
+- [ ] Do **not** "fix" it by deleting the copy — safety rule says never `os.remove` on a
+      client's files, and a bug there destroys data
+- [ ] Whatever the fix, the printed message must distinguish *skipped* from *half-moved*
+
+## 5d. Renaming lowercases the extension
+`new_name` is built from the `extension` variable, which was lowercased for the category
+lookup. So `PHOTO.JPG` renames to `PHOTO_1.jpg`. Harmless on Windows (case-insensitive
+filesystem), but wrong if the files ever land on a Mac or Linux box.
+- [ ] Keep the original extension casing when building `new_name`; lowercase only for
+      the dict lookup
 
 ## 6. Package as a standalone .exe
 - [ ] Build with PyInstaller (`--onefile`) so no Python is needed on the target PC

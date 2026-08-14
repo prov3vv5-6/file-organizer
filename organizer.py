@@ -83,15 +83,18 @@ def organize_folder(folder_path, dry_run):
             counter += 1
             
         planned_paths.add(destination_path)
-        if counter >= 2:
-            renamed_files += 1
-
-        total += 1
-        category_counts[category] = category_counts.get(category, 0) + 1
 
         # shutil.move(). You give it two arguments — the source path and the destination — and it physically moves the file:
         if not dry_run:
-            shutil.move(source_path, destination_path)
+            try:
+                shutil.move(source_path, destination_path)
+            except OSError as error:
+                print(f"Skipped {file}: {error}")
+                continue
+        if counter >= 2:
+            renamed_files += 1
+        total += 1
+        category_counts[category] = category_counts.get(category, 0) + 1
 
         print(f"{file} -> {os.path.join(category, os.path.basename(destination_path))}")
     
