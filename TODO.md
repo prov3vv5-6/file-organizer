@@ -20,20 +20,25 @@ silently overwritten. No exception to catch, so the check has to be ours.
       overwriting, and never clobber an existing file
 - [x] `while` loop keeps counting (`_1`, `_2`, …) until a free name is found
 
-## 3. Better output — do this before the dry-run ← in progress
-`print(destination_folder)` only prints the category folder. It doesn't say which file
-moved, and it doesn't show the rename — a file can land as `task2_2.pdf` with nothing on
-screen saying so. The dry-run in step 4 is just this same line without the move, so build
-it first.
-- [ ] Print the real move: `task2.pdf -> Documents\task2_2.pdf`
+## 3. Better output — DONE
+- [x] Print the real move: `invite.ics -> Calendar\invite_1.ics`
+- [x] Build the printed path with `os.path.join`, not a hardcoded `\` in the f-string
+      (`\{` is an invalid escape sequence — warns now, SyntaxError in a future Python)
 
-## 4. Dry-run / preview mode
+## 4. Dry-run / preview mode — DONE
 No undo exists, so I need to see what *would* happen before touching anything.
-- [ ] A flag (e.g. `--dry-run`) that prints every planned move without moving
-- [ ] Print a summary at the end: how many files, how many per category, how many
+- [x] A flag (`--dry-run`) that prints every planned move without moving
+- [x] Guard `os.makedirs` too — a dry run must not create empty category folders
+- [x] Print a summary at the end: how many files, how many per category, how many
       renamed
+- [x] `planned_paths` set — a dry run moves nothing, so `os.path.exists()` alone would
+      report two colliding files both landing on the same name. The set remembers the
+      names already claimed this run. (`x in some_set` is O(1); a list would make the
+      loop O(n²) — same trade as Two Sum.)
+- Per-category counts are a frequency map built with `.get(category, 0) + 1`, printed by
+  looping `.items()`. Sorting that map by value instead of key is Top K Frequent.
 
-## 5. Error handling
+## 5. Error handling ← in progress
 - [ ] Don't let one bad file (locked, permission denied) crash the whole run
 
 ## 6. Package as a standalone .exe
